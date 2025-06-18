@@ -4,8 +4,6 @@ YouTube Music Downloader with Metadata Organization
 Requires: yt-dlp, mutagen, requests
 Install with: pip install yt-dlp mutagen requests
 """
-import time
-import threading
 
 import re
 from pathlib import Path
@@ -192,7 +190,6 @@ class YouTubeMusicDownloader:
                 return None
 
             # Download the thumbnail
-            youtube_rate_limiter.acquire()
             response = requests.get(best_thumbnail['url'], timeout=10)
             if response.status_code == 200:
                 return response.content
@@ -254,7 +251,6 @@ class YouTubeMusicDownloader:
                 'quiet': True,
                 'no_warnings': True,
             }
-            youtube_rate_limiter.acquire()
             with yt_dlp.YoutubeDL(ydl_opts_info) as ydl:
                 video_info = ydl.extract_info(url, download=False)
 
@@ -312,7 +308,6 @@ class YouTubeMusicDownloader:
                 'quiet': True,
                 'extract_flat': True,
             }
-            youtube_rate_limiter.acquire()
             with yt_dlp.YoutubeDL(ydl_opts_info) as ydl:
                 playlist_info = ydl.extract_info(playlist_url, download=False)
 
@@ -383,29 +378,6 @@ def main():
             break
         else:
             print("Invalid option!")
-
-#uses import time
-#uses import threading
-class RateLimiter:
-    def __init__(self, max_calls, period):
-        self.max_calls = max_calls
-        self.period = period
-        self.lock = threading.Lock()
-        self.calls = []
-
-    def acquire(self):
-        with self.lock:
-            now = time.time()
-            # Remove outdated calls
-            self.calls = [t for t in self.calls if t > now - self.period]
-            if len(self.calls) >= self.max_calls:
-                sleep_time = self.period - (now - self.calls[0])
-                if sleep_time > 0:
-                    time.sleep(sleep_time)
-            self.calls.append(time.time())
-
-# Singleton instance for all YouTube requests
-youtube_rate_limiter = RateLimiter(max_calls=10, period=1)  # 10 requests per second
 
 if __name__ == "__main__":
     main()
